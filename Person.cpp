@@ -51,7 +51,9 @@ void Person::InitialiseFriends() {
 
 
     //after talking with Dr. Barros, simply using the keyword "new" would work just as well. No need for calloc.
-    this->p_friends = new char*[COLS];
+    this->p_friends = new char*[ROWS];
+    for(int i = 0; i < ROWS; i++)
+        p_friends[i] = (char *)malloc(COLS * sizeof(char));
 
 }
 
@@ -77,4 +79,8 @@ void Person::makeAFriend(std::string(&newFriend)[10]) {
         this->p_friends = newBuffer;
     }
 
+}
+
+char **Person::getFriends() {
+    return this->p_friends;
 }

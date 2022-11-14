@@ -39,8 +39,8 @@ private:
     const char* p_password;
 
     char** p_friends;
-    uint8_t ROWS = 30;
-    uint8_t COLS = 10;
+    uint8_t ROWS = 32;
+    uint8_t COLS = 16;
     uint8_t numOfFriends = 0;  //trying to add to friends without knowing how large the 2d pointer array is, is an impossible task
 
 
@@ -59,6 +59,7 @@ public:
     uint8_t getNumFriends();
     void InitialiseFriends();
     void makeAFriend(std::string (&newFriend) [10]);
+    char** getFriends();
 
 };
 

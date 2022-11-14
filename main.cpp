@@ -32,42 +32,16 @@ void DisplayMenuOptions()
     std::cout << "Option: ";
 }
 
-/*
-int getChoice() {
-
-    int choice = 0;
-    while ((std::isdigit(choice) == false) && choice < 4 && choice > 0){
-        std::cin.clear();
-        std::cin >> choice;
-    }
-}
- */
-
-/*
-void trimString(char (&str)[64]){
-    size_t size = strlen(str);
-    char * newbuffer = new char[size];
-    for (int i = 0; i < size; ++i) {
-        newbuffer[i] = str[i];
-    }
-    //always causes an error
-    delete(*str);
-
-    *str = *newbuffer;
-}
- */
-
-char * clampedInput(std::istream& istream){
+char * clampedInput(std::istream& istream, int arraySize){
 
     istream.clear();
-    char * temp = new char [64];
+    char * temp = new char [arraySize];
     //clamp input to 63, as 64th char needs to be null termination character
     //std::setw() clamps cinput up to x characters
-    istream >> std::setw(63) >> temp;
+    istream >> std::setw(arraySize - 1) >> temp;
 
     //null terminate the string
-    temp[64] << '\0';
-    //trimStrin(temp); doesn't work
+    temp[arraySize] = '\0';
 
     //trim the string
     size_t size = strlen(temp);
@@ -124,19 +98,13 @@ int main() {
         DisplayMenuOptions();
         std::cin >> choice;
 
-        /*
-        size_t len = strlen(reinterpret_cast<const char *>(choice));
-        if (len > 1 || (std::isdigit(choice) == false)){
-            choice = getChoice();
-        }
-         */
-
         switch (choice) {
             case 1: {
-                char *inputname = clampedInput(std::cin);
-                char *inputpasswd = clampedInput(std::cin);
+                char *inputname = clampedInput(std::cin, 64);
+                char *inputpasswd = clampedInput(std::cin, 64);
 
                 //authenticate users exists by reading file
+                //AuthenticateUser();
                 char* Buf;
                 std::ifstream file{ "people.txt" };
                 file.seekg(0, std::ios::end);
@@ -146,15 +114,30 @@ int main() {
                 file.read(&Buf[0], size);
 
                 //if matching entry -> user is authenticated
+
+                for (int i = 0; i < size; ++i) {
+
+                }
+
                 Person* tempPerson = new Person(Buf[0], Buf[1]...etc.);
                 //NOT FINISHED
 
                 //PrintUserInfo(tempPerson);
-                std::cout << "Welcome " << tempPerson->getName();
-                std::cout << "Your age is " << tempPerson->getAge();
-                std::cout << "You were born in " << tempPerson->getBirthPlace();
-                std::cout << "You have " << tempPerson->getNumFriends();
-                std::cout << "You friends are"
+                std::cout << "Welcome " << tempPerson->getName() << std::endl;
+                std::cout << "Your age is " << tempPerson->getAge() << std::endl;
+                std::cout << "You were born in " << tempPerson->getBirthPlace() << std::endl;
+                std::cout << "You have " << tempPerson->getNumFriends() << std::endl;
+                std::cout << "You friends are: \n";
+
+
+
+                for (int i = 0; i < tempPerson->getNumFriends(); ++i) {
+                    for (int j = 0; j != '\0' ; ++j) {
+                        std::cout << " - "
+                        << tempPerson->getFriends()[i][j];
+                    }
+                }
+
 
 
 
@@ -162,12 +145,12 @@ int main() {
             }
             case 2: {
 
-                char *inputname = clampedInput(std::cin);
+                char *inputname = clampedInput(std::cin, 64);
                 if (!(isValidalpha(inputname))) {
                     std::cout << "not a valid name\n";
                 }
 
-                char *inputpasswd = clampedInput(std::cin);
+                char *inputpasswd = clampedInput(std::cin, 64);
                 if (!(isValidanumeric(inputpasswd))) {
                     std::cout << "not a valid passwd\n";
                 }
@@ -180,13 +163,46 @@ int main() {
                     inputAge = 255;
                 }
 
-                char *inputBirthPlace = clampedInput(std::cin);
+                char *inputBirthPlace = clampedInput(std::cin, 64);
                 if (!(isValidalpha(inputBirthPlace))){
                     std::cout << "not a valid passwd\n";
                 }
 
-                char **inputFriends =
+                uint16_t numOfFriends;
+                std::cout << "How many friends, please enter a maximum number of 99:";
+                std::cin >> std::setw(2) >> numOfFriends;
 
+                //makeFriends :(
+                char **inputFriends = new char*[numOfFriends];
+                for (int i = 0; i < numOfFriends; ++i) {
+                    inputFriends[i] = (char*)calloc(16, sizeof(char));
+                }
+
+                my_file.open("people.txt", std::ios::app);
+                if (my_file.fail()){
+                    std::cout << "Could not find or open file\n";
+                    std::cout << "Sending back to Menu option list";
+                    delete inputname;
+                    delete inputpasswd;
+                    delete inputBirthPlace;
+                    delete[] inputFriends;
+                    break;
+                }
+
+                my_file << inputname << ',';
+                my_file << inputAge << ',';
+                my_file << inputBirthPlace << ',';
+                my_file << inputpasswd << ',';
+                for (int i = 0; i < numOfFriends; ++i) {
+                    my_file << inputFriends[i];
+                    //append , between every friend until the end to append a \0 char
+                    if (i < numOfFriends - 2){
+                        my_file << ',';
+                    }
+                }
+
+                my_file << '\n';
+                my_file.close();
 
                 std::cout << "Adding Details\n";
 
@@ -194,7 +210,7 @@ int main() {
                 delete inputname;
                 delete inputpasswd;
                 delete inputBirthPlace;
-                delete[] input
+                delete[] inputFriends;
 
                 break;
             }

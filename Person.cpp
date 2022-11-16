@@ -70,26 +70,31 @@ void Person::makeAFriend(std::string& newFriend) {
     //if we have a number of friends greater/equal to the possible storage of friends
     //resize the array.
     if (this->numOfFriends >= COLS) {
+
         //allocating a buffer (double the size) for friends to be incorporated into
-        char** newBuffer = new char* [this->numOfFriends * 2];+
+        char** newBuffer = new char* [this->numOfFriends * 2];
+
         for (int i = 0; i < this->numOfFriends; i++) {
             newBuffer[i] = p_friends[i];
         }
-        //free the memory it occupies
+
+        //free the old memory
         delete[] p_friends;
+
         //allocate new buffer
         this->p_friends = newBuffer;
     }
 
-    trimFriendName();
     //trim the names
     size_t size = newFriend.size();
     char * newbuffer = new char[size];
+
     for (int j = 0; j < newFriend.size(); ++j) {
-        newbuffer[j] = this->p_friends[j][numOfFriends];
+        newbuffer[j] = this->p_friends[numOfFriends][j];
     }
 
-    delete[] this->p_friends;
+    //delete the specific ptr for the current friend we are trimming
+    delete this->p_friends[numOfFriends];
     this->p_friends[numOfFriends] = newbuffer;
 }
 

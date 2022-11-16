@@ -2,7 +2,7 @@
 #include <fstream>
 #include <limits>
 #include <iomanip>
-#include <unordered_map>
+#include <map>
 
 #include "Person.h"
 
@@ -35,6 +35,7 @@ void DisplayMenuOptions()
 Person AuthenticateUser(char * name, char * password){
     //authenticate users exists by reading file
     //just realised doing this will make our program huge which is what we don't want
+    //however it runs in O(m+n) but has O(N) space complexity because we hold the entire file in memory
     /*
     char* Buf;
     std::ifstream file{ "people.txt" };
@@ -43,37 +44,9 @@ Person AuthenticateUser(char * name, char * password){
     Buf = new char[size];
     file.seekg(0, std::ios::beg);
     file.read(&Buf[0], size);
-     */
 
     //preprocess
-    /*
-    int j = 0, i;
-    for(i = 0; i < size; i++) {
-        while(j > 0 && needle[k] != needle[i]){
-            j = 0;
-        }
-        if(needle[k] == needle[i]){
-            pi[i] = ++j;
-        }
-    }
-    //begin matching
-    for(i = 0; i < haystack.size(); i++) {
-        while(k > 0 && haystack[i] != needle[k]) k = pi[k - 1];
-        if(haystack[i] == needle[k]) k++;
-        if(k == needle.size()) return i - needle.size() + 1;
-    }
-    return std::getline(Buf[i - strlen(name) +1]);
-    */
-
-    //open file to begin reading
-    std::fstream file;
-    file.open("people.txt", std::fstream::in);
-    char input;
-    char * pattern;
-
-    size_t nameSize = strlen(name);
-    pattern = new char[nameSize];
-    int j = 0, i;
+    //see code below
 
     //preprocess pattern using KMP algorithm, we look for the longest
     for (i = 0; i < nameSize; ++i) {
@@ -86,9 +59,60 @@ Person AuthenticateUser(char * name, char * password){
         }
     }
 
+    //begin matching
+    for(i = 0; i < size; i++) {
+        while(k > 0 && buf[i] != name[k]) k = pattern[k - 1];
+        if(buf[i] == name[k]) k++;
+        if(k == strlen(name)) return i - strlen(name) + 1;
+    }
+    return std::getline(Buf[i - strlen(name) +1]);
+    */
+
+    //open file to begin reading
+    std::fstream file;
+    file.open("people.txt", std::fstream::in);
+    char input;
+    char * pattern;
+    char * passpattern;
+
+    size_t nameSize = strlen(name);
+    size_t passwdSize = strlen(password);
+    pattern = new char[nameSize];
+    passpattern = new char[passwdSize];
+
     while (file >> input){
+
+        //if the first char is not the first element of name go to the next line
+        if (input != name[0]){
+            while (file.peek()!='\n'){
+                file >> input;
+            }
+        }
+
+        //if input is the same as first letter in the name
         if (input == name[0]){
 
+            //add everything to the pattern
+            while (file.peek()!=','){
+                file >> input >> pattern;
+
+                //if the pattern we read from the file matches name -> TIME TO CHECK PASSWORD
+                if (std::strcmp(pattern, name) == 0){
+
+                    //we need to skip the next two variables as they are age and birthplace then we can access passwd
+                    int i = 0;
+                    while(file.peek()!=','){
+                        file >> input >> pattern;
+                        i++;
+                        while (i > 2 && (file.peek() != ',')){
+                            file >> input >> passpattern;
+                            if (std::strcmp(passpattern, password) == 0){
+
+                            }
+                        }
+                    }
+                }
+            }
         }
 
     }

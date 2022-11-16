@@ -60,8 +60,6 @@ public:
     void InitialiseFriends();
     void makeAFriend(std::string& newFriend);
     char** getFriends();
-
-    void trimFriendName();
 };
 
 

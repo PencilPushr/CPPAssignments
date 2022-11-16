@@ -2,9 +2,84 @@
 #include <fstream>
 #include <limits>
 #include <iomanip>
-#include <map>
+
+//C imports :(
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdint.h>
 
 #include "Person.h"
+
+//why we have a typdef of intptr_t ssize_t;
+//https://stackoverflow.com/questions/1464174/size-t-vs-uintptr-t
+typedef intptr_t ssize_t;
+
+//understanding the getline implementation vv
+//https://pubs.opengroup.org/onlinepubs/9699919799/functions/getdelim.html
+//https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Line-Input.html
+// code is from here vv
+//https://stackoverflow.com/questions/735126/are-there-alternate-implementations-of-gnu-getline-interface/735472#735472
+
+//AAAAAAAAAAAAAAAAAAAAAAAAAAAAA WHAT THE FuCK
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+
+    size_t pos;
+    int c;
+
+    if (lineptr == NULL || stream == NULL || n == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    c = getc(stream);
+    if (c == EOF) {
+        return -1;
+    }
+
+    if (*lineptr == NULL) {
+        *lineptr = (char *)malloc(128);
+        if (*lineptr == NULL) {
+            return -1;
+        }
+        *n = 128;
+    }
+
+    pos = 0;
+    while(c != EOF) {
+        if (pos + 1 >= *n) {
+            size_t new_size = *n + (*n >> 2);
+
+            //if the line we are reading in is greater than 128 we need to increase the size of our buffer
+            if (new_size < 128) {
+                new_size = 128;
+            }
+
+            //allocating new memory for buffer
+            char *new_ptr = (char *)(realloc(*lineptr, new_size));
+
+            //if memory allocation fails, return with fail bit
+            if (new_ptr == NULL) {
+                return -1;
+            }
+            *n = new_size;
+            *lineptr = new_ptr;
+        }
+
+        ((unsigned char *)(*lineptr))[pos ++] = c;
+
+        //'\n' signifies we are at the end of the line
+        if (c == '\n') {
+
+            //break and return the current line buffer
+            break;
+        }
+        c = getc(stream);
+    }
+
+    (*lineptr)[pos] = '\0';
+    return pos;
+}
 
 namespace numerical_chars {
     inline std::ostream &operator<<(std::ostream &os, char c) {
@@ -33,90 +108,34 @@ void DisplayMenuOptions()
 }
 
 Person AuthenticateUser(char * name, char * password){
-    //authenticate users exists by reading file
-    //just realised doing this will make our program huge which is what we don't want
-    //however it runs in O(m+n) but has O(N) space complexity because we hold the entire file in memory
-    /*
-    char* Buf;
-    std::ifstream file{ "people.txt" };
-    file.seekg(0, std::ios::end);
-    int size = file.tellg();
-    Buf = new char[size];
-    file.seekg(0, std::ios::beg);
-    file.read(&Buf[0], size);
 
-    //preprocess
-    //see code below
+    //std::fstream throws a failued should I try to use the getline function,
+    //I need the getline function.
+    //I have rewritten this program 5 TIMES!!!!!!!!!!!!!!!!
 
-    //preprocess pattern using KMP algorithm, we look for the longest
-    for (i = 0; i < nameSize; ++i) {
-        //iterate through our pattern
-        while (j > 0 && name[j] != name[i]){
-            j = 0;
-        }
-        if (name[j] == name[i]){
-            pattern[i] = ++j;
-        }
+    //https://pbs.twimg.com/media/Ewm24woWYAM8mBH.jpg
+
+    //I hate C
+    //https://en.cppreference.com/w/c/io/FILE
+    FILE * file;
+
+    file = fopen("/etc/motd", "r");
+    if (file == NULL)
+        exit(EXIT_FAILURE);
+
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    //as it turns out things like getline function in C do not work on non-UNIX systems
+    //NOTE: fgets breaks very easily as the bufferlength determines the line length.
+    while ((read = getline(&line, &len, file)) != -1) {
+        read
     }
 
-    //begin matching
-    for(i = 0; i < size; i++) {
-        while(k > 0 && buf[i] != name[k]) k = pattern[k - 1];
-        if(buf[i] == name[k]) k++;
-        if(k == strlen(name)) return i - strlen(name) + 1;
-    }
-    return std::getline(Buf[i - strlen(name) +1]);
-    */
-
-    //open file to begin reading
-    std::fstream file;
-    file.open("people.txt", std::fstream::in);
-    char input;
-    char * pattern;
-    char * passpattern;
-
-    size_t nameSize = strlen(name);
-    size_t passwdSize = strlen(password);
-    pattern = new char[nameSize];
-    passpattern = new char[passwdSize];
-
-    while (file >> input){
-
-        //if the first char is not the first element of name go to the next line
-        if (input != name[0]){
-            while (file.peek()!='\n'){
-                file >> input;
-            }
-        }
-
-        //if input is the same as first letter in the name
-        if (input == name[0]){
-
-            //add everything to the pattern
-            while (file.peek()!=','){
-                file >> input >> pattern;
-
-                //if the pattern we read from the file matches name -> TIME TO CHECK PASSWORD
-                if (std::strcmp(pattern, name) == 0){
-
-                    //we need to skip the next two variables as they are age and birthplace then we can access passwd
-                    int i = 0;
-                    while(file.peek()!=','){
-                        file >> input >> pattern;
-                        i++;
-                        while (i > 2 && (file.peek() != ',')){
-                            file >> input >> passpattern;
-                            if (std::strcmp(passpattern, password) == 0){
-
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-    return (Person) nullptr;
+    fclose(file);
+    if (line)
+        free(line);
 }
 
 char * clampedInput(std::istream& istream, int arraySize){

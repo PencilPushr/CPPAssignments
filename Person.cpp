@@ -5,6 +5,7 @@
 
 #include "Person.h"
 
+//std::string ensures null termination.
 Person::Person(std::string& name, unsigned char age, std::string& birthplace, std::string& password) {
     this->p_name = name.c_str();
     this->age = age;
@@ -51,34 +52,45 @@ void Person::InitialiseFriends() {
 
 
     //after talking with Dr. Barros, simply using the keyword "new" would work just as well. No need for calloc.
-    this->p_friends = new char*[ROWS];
+    this->p_friends = new char*[ROWS]; //friends name length
     for(int i = 0; i < ROWS; i++)
-        p_friends[i] = (char *)malloc(COLS * sizeof(char));
+        this->p_friends[i] = new char[COLS]; //number of friends
 
 }
 
-void Person::makeAFriend(std::string(&newFriend)[10]) {
+void Person::makeAFriend(std::string& newFriend) {
 
     if (numOfFriends == 0){
         Person::InitialiseFriends();
     }
 
-    strcpy(this->p_friends[numOfFriends + 1], newFriend->c_str());
+    strcpy(this->p_friends[numOfFriends + 1], newFriend.c_str());
     this->numOfFriends++;
 
     //if we have a number of friends greater/equal to the possible storage of friends
     //resize the array.
     if (this->numOfFriends >= COLS) {
         //allocating a buffer (double the size) for friends to be incorporated into
-        char** newBuffer = new char* [this->numOfFriends * 2];
+        char** newBuffer = new char* [this->numOfFriends * 2];+
         for (int i = 0; i < this->numOfFriends; i++) {
-            newBuffer[i] = p_friends[i]; }
+            newBuffer[i] = p_friends[i];
+        }
         //free the memory it occupies
         delete[] p_friends;
         //allocate new buffer
         this->p_friends = newBuffer;
     }
 
+    trimFriendName();
+    //trim the names
+    size_t size = newFriend.size();
+    char * newbuffer = new char[size];
+    for (int j = 0; j < newFriend.size(); ++j) {
+        newbuffer[j] = this->p_friends[j][numOfFriends];
+    }
+
+    delete[] this->p_friends;
+    this->p_friends[numOfFriends] = newbuffer;
 }
 
 char **Person::getFriends() {

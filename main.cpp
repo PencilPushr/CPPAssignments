@@ -2,13 +2,13 @@
 #include <fstream>
 #include <limits>
 #include <iomanip>
+#include <unordered_map>
 
 #include "Person.h"
 
 namespace numerical_chars {
     inline std::ostream &operator<<(std::ostream &os, char c) {
-        return std::is_signed<char>::value ? os << static_cast<int>(c)
-                                           : os << static_cast<unsigned int>(c);
+        return std::is_signed<char>::value ? os << static_cast<int>(c) : os << static_cast<unsigned int>(c);
     }
 
     inline std::ostream &operator<<(std::ostream &os, signed char c) {
@@ -32,11 +32,74 @@ void DisplayMenuOptions()
     std::cout << "Option: ";
 }
 
+Person AuthenticateUser(char * name, char * password){
+    //authenticate users exists by reading file
+    //just realised doing this will make our program huge which is what we don't want
+    /*
+    char* Buf;
+    std::ifstream file{ "people.txt" };
+    file.seekg(0, std::ios::end);
+    int size = file.tellg();
+    Buf = new char[size];
+    file.seekg(0, std::ios::beg);
+    file.read(&Buf[0], size);
+     */
+
+    //preprocess
+    /*
+    int j = 0, i;
+    for(i = 0; i < size; i++) {
+        while(j > 0 && needle[k] != needle[i]){
+            j = 0;
+        }
+        if(needle[k] == needle[i]){
+            pi[i] = ++j;
+        }
+    }
+    //begin matching
+    for(i = 0; i < haystack.size(); i++) {
+        while(k > 0 && haystack[i] != needle[k]) k = pi[k - 1];
+        if(haystack[i] == needle[k]) k++;
+        if(k == needle.size()) return i - needle.size() + 1;
+    }
+    return std::getline(Buf[i - strlen(name) +1]);
+    */
+
+    //open file to begin reading
+    std::fstream file;
+    file.open("people.txt", std::fstream::in);
+    char input;
+    char * pattern;
+
+    size_t nameSize = strlen(name);
+    pattern = new char[nameSize];
+    int j = 0, i;
+
+    //preprocess pattern using KMP algorithm, we look for the longest
+    for (i = 0; i < nameSize; ++i) {
+        //iterate through our pattern
+        while (j > 0 && name[j] != name[i]){
+            j = 0;
+        }
+        if (name[j] == name[i]){
+            pattern[i] = ++j;
+        }
+    }
+
+    while (file >> input){
+        if (input == name[0]){
+
+        }
+
+    }
+    return (Person) nullptr;
+}
+
 char * clampedInput(std::istream& istream, int arraySize){
 
     istream.clear();
     char * temp = new char [arraySize];
-    //clamp input to 63, as 64th char needs to be null termination character
+    //clamp input to 31, as 32th char needs to be null termination character
     //std::setw() clamps cinput up to x characters
     istream >> std::setw(arraySize - 1) >> temp;
 
@@ -58,6 +121,9 @@ char * clampedInput(std::istream& istream, int arraySize){
 }
 
 bool isValidalpha(char * inputname){
+
+    if (inputname[0] == '\0') return false;
+
     //make sure name is alpha characters and nothing else
     size_t len = strlen(inputname);
     for (int i = 0; i < len; ++i) {
@@ -69,6 +135,9 @@ bool isValidalpha(char * inputname){
 }
 
 bool isValidanumeric(char * inputname){
+
+    if (inputname[0] == '\0') return false;
+
     //make sure name is alpha characters and nothing else
     size_t len = strlen(inputname);
     for (int i = 0; i < len; ++i) {
@@ -103,24 +172,12 @@ int main() {
                 char *inputname = clampedInput(std::cin, 64);
                 char *inputpasswd = clampedInput(std::cin, 64);
 
-                //authenticate users exists by reading file
-                //AuthenticateUser();
-                char* Buf;
-                std::ifstream file{ "people.txt" };
-                file.seekg(0, std::ios::end);
-                int size = file.tellg();
-                Buf = new char[size];
-                file.seekg(0, std::ios::beg);
-                file.read(&Buf[0], size);
-
-                //if matching entry -> user is authenticated
-
-                for (int i = 0; i < size; ++i) {
-
+                if (inputname[0] == '\0' || inputpasswd[0] == '\0'){
+                    std::cout << "can't have a null name or password\n";
+                    break;
                 }
 
-                Person* tempPerson = new Person(Buf[0], Buf[1]...etc.);
-                //NOT FINISHED
+                Person *tempPerson = new Person(AuthenticateUser(inputname, inputpasswd));
 
                 //PrintUserInfo(tempPerson);
                 std::cout << "Welcome " << tempPerson->getName() << std::endl;
@@ -160,7 +217,7 @@ int main() {
                 if (inputAge > 255){
                     std::cout << "Cannot have an age greater than 255\n"
                     << "Age has been clamped at 255\n";
-                    inputAge = 255;
+                    inputAge = 255; //how has anyone lived this long??
                 }
 
                 char *inputBirthPlace = clampedInput(std::cin, 64);
@@ -172,11 +229,19 @@ int main() {
                 std::cout << "How many friends, please enter a maximum number of 99:";
                 std::cin >> std::setw(2) >> numOfFriends;
 
-                //makeFriends :(
+                //makeFriends
                 char **inputFriends = new char*[numOfFriends];
                 for (int i = 0; i < numOfFriends; ++i) {
-                    inputFriends[i] = (char*)calloc(16, sizeof(char));
+                    inputFriends[i] = new char[32];
                 }
+
+                for(int i = 0; i < numOfFriends; ++i){
+                    std::cout << "Enter a name less than 31 characters:";
+                    inputFriends[i] = clampedInput(std::cin, 32);
+                }
+
+
+
 
                 my_file.open("people.txt", std::ios::app);
                 if (my_file.fail()){
@@ -185,6 +250,9 @@ int main() {
                     delete inputname;
                     delete inputpasswd;
                     delete inputBirthPlace;
+                    for (int i = 0; i < numOfFriends; ++i) {
+                        delete[] inputFriends[i];
+                    }
                     delete[] inputFriends;
                     break;
                 }
@@ -195,13 +263,15 @@ int main() {
                 my_file << inputpasswd << ',';
                 for (int i = 0; i < numOfFriends; ++i) {
                     my_file << inputFriends[i];
-                    //append , between every friend until the end to append a \0 char
+
+                    //append , between every friend until the end to append a \n char
                     if (i < numOfFriends - 2){
                         my_file << ',';
                     }
                 }
 
                 my_file << '\n';
+
                 my_file.close();
 
                 std::cout << "Adding Details\n";
@@ -210,6 +280,9 @@ int main() {
                 delete inputname;
                 delete inputpasswd;
                 delete inputBirthPlace;
+                for (int i = 0; i < numOfFriends; ++i) {
+                    delete[] inputFriends[i];
+                }
                 delete[] inputFriends;
 
                 break;

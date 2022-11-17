@@ -122,7 +122,7 @@ void DisplayMenuOptions()
     std::cout << "Option: ";
 }
 
-char * AuthenticateUser(char * name, char * password){
+char * AuthenticateUser(char * name, char * password, uint32_t * lengthOfLine){
 
     //std::fstream throws a failued should I try to use the getline function,
     //I need the getline function.
@@ -164,7 +164,6 @@ char * AuthenticateUser(char * name, char * password){
 
                 pos++;
             }//if we exit this loop, name must be correct
-
             int passidx = 0;
             for (; line[pos] != '\n'; ++pos) {
                 if (line[pos] != password[passidx++]) break;
@@ -175,6 +174,7 @@ char * AuthenticateUser(char * name, char * password){
             lineForPerson = line;
             fclose(file);
             if (line) free(line);
+            lengthOfLine = (uint32_t *)(len);
             return lineForPerson;
 
         } //otherwise move onto the next line
@@ -270,30 +270,95 @@ int main() {
                     break;
                 }
 
-                char * User = AuthenticateUser(inputname, inputpasswd);
-                if (User == nullptr){
-                    free(User);
+                uint32_t lengthOfLine = 0;
+
+                //read file into a string that we can break up into Person attributes
+                char * UserLine = AuthenticateUser(inputname, inputpasswd, &lengthOfLine);
+                if (UserLine == nullptr){
+                    free(UserLine);
                     std::cout << "No user exists\n";
                     break;
                 }
 
-                //break up the string into
+                size_t friendssize = lengthOfLine >> 1;
 
-                Person * tempPerson;
+                //break up the string into counterparts;
+                uint8_t l_age;
+                char * birthPlace = new char[63];
+                char ** friends = new char*[32];
+
+                for (int i = 0; i < lengthOfLine; ++i) {
+                    friends[i] = new char[friendssize];
+                }
+                friends[friendssize][32] = '\0';
+
+                int idx = 0;
+                int idy = 0;
+                bool skippedAge = false;
+
+                for (int i = 0; i < lengthOfLine; ++i) {
+                    //skip first item which is name to get to age and birth place
+                    if (UserLine[i] != ',') ++i;
+                    //need to move off the comma and get age
+                    ++i;
+
+                    if (UserLine[i] != ','){
+                        l_age = UserLine[i];
+                    }
+                    ++i;
+
+                    //we are now on birthplace
+                    if(UserLine[i] != ','){
+                        birthPlace[idx++] = UserLine[i];
+                    }
+                    idx = 0;
+                    ++i;
+
+                    //skip password
+                    if(UserLine[i] != ','){
+                        ++i;
+                    }
+                    ++i;
+
+                    //now at friends
+                    while(UserLine[i] != '\n' || UserLine[i] != '\0'){
+                        for (int j = 0; j < 32; ++j) {
+                            friends[idx++][j] = UserLine[i];
+                            friends[idx][32] = '\0';
+                            if (friends[idx][j] == ','){
+                                char * buffer = new char[j+1];
+
+                                for (int k = 0; k < j; ++k) {
+                                    buffer[k] = friends[idx][k];
+                                }
+
+                                delete friends[idx];
+                                friends[idx] = buffer;
+                                friends[idx][j+1] = '\0';
+                            }
+                        }
+                    }
+                }
+
+                Person * tempPerson = new Person(reinterpret_cast<std::string &>(inputname), l_age,
+                                                 reinterpret_cast<std::string &>(birthPlace),
+                                                 reinterpret_cast<std::string &>(inputpasswd));
+                for (int i = 0; i < friendssize; ++i) {
+                    tempPerson->makeAFriend(reinterpret_cast<std::string &>(friends[i]));
+                }
 
                 //PrintUserInfo(tempPerson);
-                std::cout << "Welcome " << inputname << std::endl;
-                std::cout << "Your age is " << inputpasswd << std::endl;
-                std::cout << "You were born in " << tempPerson->getBirthPlace() << std::endl;
-                std::cout << "You have " << tempPerson->getNumFriends() << std::endl;
-                std::cout << "You friends are: \n";
-
-
+                std::cout << "\nWelcome " << inputname << std::endl;
+                std::cout << "\nYour age is ";
+                numerical_chars::operator<<(std::cout, tempPerson->getAge()) << std::endl;
+                std::cout << "\nYou were born in " << tempPerson->getBirthPlace() << std::endl;
+                std::cout << "\nYou have " << tempPerson->getNumFriends() << std::endl;
+                std::cout << "\nYou friends are: \n";
 
                 for (int i = 0; i < tempPerson->getNumFriends(); ++i) {
-                    for (int j = 0; j != '\0' ; ++j) {
-                        std::cout << " - "
-                        << tempPerson->getFriends()[i][j];
+                    char * friendToPrint = new char[63];
+                    for (int j = 0; tempPerson->getFriends()[i][j] != '\0' ; ++j) {
+                        std::cout << " - " << tempPerson->getFriends()[i][j];
                     }
                 }
 
@@ -303,15 +368,15 @@ int main() {
             }
             case 2: {
 
-                std::cout << "Enter Name (Max 63 char):";
-                char *inputname = clampedInput(std::cin, 64);
+                std::cout << "Enter Name (Max 31 char):";
+                char *inputname = clampedInput(std::cin, 32);
                 if (!(isValidalpha(inputname))) {
                     std::cout << "not a valid name\n";
                 }
                 std::cout << "\n";
 
-                std::cout << "Enter Password (Max 63 char):";
-                char *inputpasswd = clampedInput(std::cin, 64);
+                std::cout << "Enter Password (Max 31 char):";
+                char *inputpasswd = clampedInput(std::cin, 32);
                 if (!(isValidanumeric(inputpasswd))) {
                     std::cout << "not a valid passwd\n";
                 }
@@ -327,15 +392,15 @@ int main() {
                 }
                 std::cout << "\n";
 
-                std::cout << "Enter Birth Place (Max 63 char):";
-                char *inputBirthPlace = clampedInput(std::cin, 64);
+                std::cout << "Enter Birth Place (Max 31 char):";
+                char *inputBirthPlace = clampedInput(std::cin, 32);
                 if (!(isValidalpha(inputBirthPlace))){
                     std::cout << "not a valid passwd\n";
                 }
                 std::cout << '\n';
 
                 uint16_t numOfFriends;
-                std::cout << "Number of friends to register, please enter a maximum number of 99:";
+                std::cout << "Number of friends to register, please enter at maximum 99:";
                 std::cin >> std::setw(2) >> numOfFriends;
                 std::cout << '\n';
 

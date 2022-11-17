@@ -18,7 +18,9 @@ typedef intptr_t ssize_t;
 //understanding the getline implementation vv
 //https://pubs.opengroup.org/onlinepubs/9699919799/functions/getdelim.html
 //https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Line-Input.html
-// code is from here vv
+
+// getline was implemented from the code that is from these two links
+//https://stackoverflow.com/questions/3501338/c-read-file-line-by-line
 //https://stackoverflow.com/questions/735126/are-there-alternate-implementations-of-gnu-getline-interface/735472#735472
 
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAA WHAT THE FuCK
@@ -27,6 +29,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     size_t pos;
     int c;
 
+    //if the address of these are null something bad has happened, return a fail bit
     if (lineptr == NULL || stream == NULL || n == NULL) {
         errno = EINVAL;
         return -1;
@@ -37,20 +40,28 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
         return -1;
     }
 
+    //assign buffer if line PTR is null
     if (*lineptr == NULL) {
+
+        //minimum length is 128 chars
         *lineptr = (char *)malloc(128);
         if (*lineptr == NULL) {
             return -1;
         }
+
+        //keeping track of size
         *n = 128;
     }
 
     pos = 0;
+
+    //iterate until we are at the end of the file (!(EOF))
     while(c != EOF) {
         if (pos + 1 >= *n) {
+            //e.g. on the first run (128 + (shifting bits of 128 to the right twice yields == 32))
             size_t new_size = *n + (*n >> 2);
 
-            //if the line we are reading in is greater than 128 we need to increase the size of our buffer
+            //if the new size is less than 128, set it to 128
             if (new_size < 128) {
                 new_size = 128;
             }
@@ -62,6 +73,8 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
             if (new_ptr == NULL) {
                 return -1;
             }
+
+            //update with new size and new memory
             *n = new_size;
             *lineptr = new_ptr;
         }
@@ -81,9 +94,11 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     return pos;
 }
 
+//needed to print uint8_t Age (otherwise we will print the corresponding ascii char value)
 namespace numerical_chars {
     inline std::ostream &operator<<(std::ostream &os, char c) {
-        return std::is_signed<char>::value ? os << static_cast<int>(c) : os << static_cast<unsigned int>(c);
+        return std::is_signed<char>::value ? os << static_cast<int>(c) :
+        os << static_cast<unsigned int>(c);
     }
 
     inline std::ostream &operator<<(std::ostream &os, signed char c) {
@@ -107,11 +122,15 @@ void DisplayMenuOptions()
     std::cout << "Option: ";
 }
 
-Person AuthenticateUser(char * name, char * password){
+char * AuthenticateUser(char * name, char * password){
 
     //std::fstream throws a failued should I try to use the getline function,
     //I need the getline function.
-    //I have rewritten this program 5 TIMES!!!!!!!!!!!!!!!!
+
+    //EDIT: https://stackoverflow.com/questions/3501338/c-read-file-line-by-line
+    // there are many implementations
+
+    //I have rewritten this FUNCTION 6 TIMES!!!!!!!!!!!!!!!!
 
     //https://pbs.twimg.com/media/Ewm24woWYAM8mBH.jpg
 
@@ -119,23 +138,52 @@ Person AuthenticateUser(char * name, char * password){
     //https://en.cppreference.com/w/c/io/FILE
     FILE * file;
 
-    file = fopen("/etc/motd", "r");
+    file = fopen("people.txt", "r");
     if (file == NULL)
         exit(EXIT_FAILURE);
 
     char * line = NULL;
+    char * lineForPerson = NULL;
     size_t len = 0;
     ssize_t read;
 
+
+    //fgets breaks very easily as the bufferlength determines the line length.
+
+    //man page: https://linux.die.net/man/3/getline
     //as it turns out things like getline function in C do not work on non-UNIX systems
-    //NOTE: fgets breaks very easily as the bufferlength determines the line length.
     while ((read = getline(&line, &len, file)) != -1) {
-        read
+
+        int pos = 0; //position in the line
+
+        if (line[0] == name[0]){
+            for (size_t i = 0; line[i] != ',' ; ++i) {
+
+                //check if the name is the same
+                if (line[i] != name[i]) break;
+
+                pos++;
+            }//if we exit this loop, name must be correct
+
+            int passidx = 0;
+            for (; line[pos] != '\n'; ++pos) {
+                if (line[pos] != password[passidx++]) break;
+            }
+
+            //we have found the user that has the right
+
+            lineForPerson = line;
+            fclose(file);
+            if (line) free(line);
+            return lineForPerson;
+
+        } //otherwise move onto the next line
     }
 
     fclose(file);
-    if (line)
-        free(line);
+    if (line) free(line);
+    return lineForPerson;
+
 }
 
 char * clampedInput(std::istream& istream, int arraySize){
@@ -216,15 +264,26 @@ int main() {
                 char *inputpasswd = clampedInput(std::cin, 64);
 
                 if (inputname[0] == '\0' || inputpasswd[0] == '\0'){
+                    free(inputname);
+                    free(inputpasswd);
                     std::cout << "can't have a null name or password\n";
                     break;
                 }
 
-                Person *tempPerson = new Person(AuthenticateUser(inputname, inputpasswd));
+                char * User = AuthenticateUser(inputname, inputpasswd);
+                if (User == nullptr){
+                    free(User);
+                    std::cout << "No user exists\n";
+                    break;
+                }
+
+                //break up the string into
+
+                Person * tempPerson;
 
                 //PrintUserInfo(tempPerson);
-                std::cout << "Welcome " << tempPerson->getName() << std::endl;
-                std::cout << "Your age is " << tempPerson->getAge() << std::endl;
+                std::cout << "Welcome " << inputname << std::endl;
+                std::cout << "Your age is " << inputpasswd << std::endl;
                 std::cout << "You were born in " << tempPerson->getBirthPlace() << std::endl;
                 std::cout << "You have " << tempPerson->getNumFriends() << std::endl;
                 std::cout << "You friends are: \n";
@@ -238,23 +297,27 @@ int main() {
                     }
                 }
 
-
-
+                free(tempPerson);
 
                 break;
             }
             case 2: {
 
+                std::cout << "Enter Name (Max 63 char):";
                 char *inputname = clampedInput(std::cin, 64);
                 if (!(isValidalpha(inputname))) {
                     std::cout << "not a valid name\n";
                 }
+                std::cout << "\n";
 
+                std::cout << "Enter Password (Max 63 char):";
                 char *inputpasswd = clampedInput(std::cin, 64);
                 if (!(isValidanumeric(inputpasswd))) {
                     std::cout << "not a valid passwd\n";
                 }
+                std::cout << "\n";
 
+                std::cout << "Enter age (Max 255)";
                 uint16_t inputAge;
                 std::cin >> std::setw(3) >> inputAge;
                 if (inputAge > 255){
@@ -262,15 +325,19 @@ int main() {
                     << "Age has been clamped at 255\n";
                     inputAge = 255; //how has anyone lived this long??
                 }
+                std::cout << "\n";
 
+                std::cout << "Enter Birth Place (Max 63 char):";
                 char *inputBirthPlace = clampedInput(std::cin, 64);
                 if (!(isValidalpha(inputBirthPlace))){
                     std::cout << "not a valid passwd\n";
                 }
+                std::cout << '\n';
 
                 uint16_t numOfFriends;
-                std::cout << "How many friends, please enter a maximum number of 99:";
+                std::cout << "Number of friends to register, please enter a maximum number of 99:";
                 std::cin >> std::setw(2) >> numOfFriends;
+                std::cout << '\n';
 
                 //makeFriends
                 char **inputFriends = new char*[numOfFriends];
@@ -278,12 +345,14 @@ int main() {
                     inputFriends[i] = new char[32];
                 }
 
-                for(int i = 0; i < numOfFriends; ++i){
-                    std::cout << "Enter a name less than 31 characters:";
-                    inputFriends[i] = clampedInput(std::cin, 32);
+                //no need to do this operation if we don't have any friends
+                if (numOfFriends != 0){
+                    for(int i = 0; i < numOfFriends; ++i){
+                        std::cout << "Enter a name less than 31 characters:";
+                        inputFriends[i] = clampedInput(std::cin, 32);
+                        std::cout << "\n";
+                    }
                 }
-
-
 
 
                 my_file.open("people.txt", std::ios::app);
@@ -304,12 +373,15 @@ int main() {
                 my_file << inputAge << ',';
                 my_file << inputBirthPlace << ',';
                 my_file << inputpasswd << ',';
-                for (int i = 0; i < numOfFriends; ++i) {
-                    my_file << inputFriends[i];
 
-                    //append , between every friend until the end to append a \n char
-                    if (i < numOfFriends - 2){
-                        my_file << ',';
+                if(numOfFriends != 0) {
+                    for (int i = 0; i < numOfFriends; ++i) {
+                        my_file << inputFriends[i];
+
+                        //append , between every friend until the end to append a \n char
+                        if (i < numOfFriends - 2) {
+                            my_file << ',';
+                        }
                     }
                 }
 

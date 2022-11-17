@@ -18,8 +18,6 @@
 
 #define _DATE_H_
 
-using namespace std;
-
 #include <iostream>
 #include <string>
 
@@ -42,7 +40,8 @@ class Date
     bool operator>(const Date& other) const;
         // return true if this date is after other, false otherwise
 
-    operator string() const;
+        //it has been marked as explicit, because clion keeps trying to make this into std::basic_string();
+    explicit operator std::string() const;
         // return a string of the form "Day Month Year"
 
         // you can generate a string containing digits using to_string(n)
@@ -54,8 +53,9 @@ class Date
         //    when s is a string and x is a char or a C-string
         //    (but not when x is a number)
 
-  friend ostream& operator<<(ostream& o, const Date& d);
+  friend std::ostream& operator<<(std::ostream& o, const Date& d);
       // output date in format dd/mm/yyyy, e.g. 02/11/2019
 };
+
 
 #endif

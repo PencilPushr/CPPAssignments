@@ -23,9 +23,12 @@
 
 class Date
 { private:
+    std::string name;
     unsigned int d; // 1-31
     unsigned int m; // 1-12
     unsigned int y; // 1000-9999 (must be a 4-digit year)
+    const char * months[12] = {"January", "February", "March", "April", "May", "June", "July",
+                               "August", "September", "October", "November", "December"};
 
   public:
     Date();  // initialise members to valid default values, e.g. 1/1/2019
@@ -41,6 +44,9 @@ class Date
         // return true if this date is after other, false otherwise
 
         //it has been marked as explicit, because clion keeps trying to make this into std::basic_string();
+        //
+        //PLEASE REMOVE THIS, THIS IS AN IDE PROBLEM, I DON'T KNOW HOW TO FIX IT!!!!
+        //
     explicit operator std::string() const;
         // return a string of the form "Day Month Year"
 
@@ -53,8 +59,14 @@ class Date
         //    when s is a string and x is a char or a C-string
         //    (but not when x is a number)
 
-  friend std::ostream& operator<<(std::ostream& o, const Date& d);
+    friend std::ostream& operator<<(std::ostream& o, const Date& d);
       // output date in format dd/mm/yyyy, e.g. 02/11/2019
+
+      std::string getName() const;
+      void setName(std::string& i_name);
+      std::string monthStr(unsigned int month) const;
+      void printAgeDif(const Date& d1, const Date& d2);
+
 };
 
 

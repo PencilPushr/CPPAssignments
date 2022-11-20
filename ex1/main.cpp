@@ -446,14 +446,15 @@ int main() {
                     break;
                 }
 
-                my_file << inputname << ',';
-                my_file << (uint8_t) inputAge << ',';
-                my_file << inputBirthPlace << ',';
-                my_file << inputpasswd << ',';
+                my_file << (*(inputname)) << ',';
+                my_file << static_cast<unsigned int>(inputAge) << ',';
+                my_file << (*(inputBirthPlace)) << ',';
+                my_file << (*(inputpasswd)) << ',';
+                my_file << (numOfFriends) << ',';
 
                 if(numOfFriends != 0) {
                     for (int i = 0; i < numOfFriends; ++i) {
-                        my_file << inputFriends[i];
+                        my_file << (*(inputFriends[i]));
 
                         //append , between every friend until the end to append a \n char
                         if (i < numOfFriends - 2) {

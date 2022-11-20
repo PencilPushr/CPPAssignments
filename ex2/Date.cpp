@@ -1,5 +1,39 @@
 #include "Date.h"
 
+extern void printAgeDif(Date& d1, Date& d2){
+
+    //hack
+    struct dateptr {
+        unsigned int dd;
+        unsigned int mm;
+        unsigned int yy;
+    };
+
+    //creating accessible struct ptrs to the information pointed at in the Date class
+    auto *d1ptr = (dateptr *)(&d1);
+    auto *d2ptr = (dateptr *)(&d2);
+
+
+    //getting the "private" variables
+    //comparing the biggest of the dates and getting the difference
+    unsigned int day = std::max(d1ptr->dd, d2ptr->dd) - std::min(d1ptr->dd, d2ptr->dd);
+    unsigned int month = std::max(d1ptr->mm, d2ptr->mm) - std::min(d1ptr->mm, d2ptr->mm);
+    unsigned int year = std::max(d1ptr->yy, d2ptr->yy) - std::min(d1ptr->yy, d2ptr->yy);
+
+    //if they are the same age
+    if (day == 0 && month == 0 && year == 0){
+        std::cout << d1.name << "is the same age as" << d2.name;
+    }
+
+    Date older = d1 > d2 ? d1 : d2;
+    Date younger = d1 < d2 ? d1 : d2;
+
+    std::cout   << younger.name << " is "
+                << year << " year(s) "
+                << month << " month(s), and "
+                << day << " days younger than " << older.getName();
+}
+
 Date::Date() {
 
     //Y2K
@@ -112,26 +146,3 @@ std::string Date::monthStr(unsigned int month) const {
     return this->months[month-1];
 }
 
-//Update the output of the program so that you show the difference between the users, starting from the youngest.
-//this implies we do a comparison of the younger vs older person
-void Date::printAgeDif(const Date& d1, const Date& d2)
-{
-    //getting the
-    unsigned int day = std::max(d1.d, d2.d) - std::min(d1.d, d2.d);
-    unsigned int month = std::max(d1.m, d2.m) - std::min(d1.m, d2.m);
-    unsigned int year = std::max(d1.y, d2.y) - std::min(d1.y, d2.y);
-
-    //if they are the same age
-    if (day == 0 && month == 0 && year == 0){
-        std::cout << d1.getName() << "is the same age as" << d2.getName();
-    }
-
-    Date older = d1 > d2 ? d1 : d2;
-    Date younger = d1 < d2 ? d1 : d2;
-
-    std::cout   << younger.getName() << " is "
-                << year << " year(s) "
-                << months << " month(s), and "
-                << day << " days younger than " << older.getName();
-
-}

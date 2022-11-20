@@ -23,14 +23,15 @@
 
 class Date
 { private:
-    std::string name;
     unsigned int d; // 1-31
     unsigned int m; // 1-12
     unsigned int y; // 1000-9999 (must be a 4-digit year)
+
+  public:
+    std::string name;
     const char * months[12] = {"January", "February", "March", "April", "May", "June", "July",
                                "August", "September", "October", "November", "December"};
 
-  public:
     Date();  // initialise members to valid default values, e.g. 1/1/2019
     Date(unsigned int day, unsigned int month, unsigned int year);
         // initialise using arguments
@@ -65,7 +66,6 @@ class Date
       std::string getName() const;
       void setName(std::string& i_name);
       std::string monthStr(unsigned int month) const;
-      void printAgeDif(const Date& d1, const Date& d2);
 
 };
 

@@ -69,5 +69,7 @@ class Date
 
 };
 
+extern void printAgeDif(Date& d1, Date& d2);
+
 
 #endif
